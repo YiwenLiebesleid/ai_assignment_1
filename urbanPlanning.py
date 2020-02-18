@@ -43,7 +43,7 @@ def findNeighbors(position, map, distance):
     for x in range(X-distance, X+distance+1):
         if x < 0: continue
         if x >= h: break
-        for y in range(Y-abs(X-x), Y+abs(X-x)+1):
+        for y in range(Y-distance+abs(X-x), Y+distance-abs(X-x)+1):
             if y < 0: continue
             if y >= w: break
             if x == X and y == Y: continue
@@ -77,27 +77,29 @@ class Population:
         previous_list = self.zones[name]
         previous_list.append(position)
         self.zones.update({name:previous_list})
-        self.score -= diff
         return True
-
+    
     def removeZone(self, name, position, map):
-        diff = map.checkMap(position)
         if not self.checkOverlap(position): # no zone here, can't remove
             return False
         self.zones[name].remove(position)
-        self.score += diff
         return True
-
+  
     def calculateScore(self, map):  # whenever you make an action, add or remove, you need to calculate score
+        self.score = 0
         self.industrial = len(self.zones['industrial'])
         self.commercial = len(self.zones['commercial'])
         self.residential = len(self.zones['residential'])
         for pos in self.zones['industrial']:
+            diff = map.checkMap(pos)
+            self.score -= diff
             neighbors = findNeighbors(pos,map,2)
             for items in neighbors:
                 if map.info[items] == 'X': self.score -= 10 # Industrial zones within 2 tiles take a penalty of -10
                 elif items in self.zones['industrial']: self.score += 2   # each industrial tile within 2 squares, bonus of 2
         for pos in self.zones['commercial']:
+            diff = map.checkMap(pos)
+            self.score -= diff
             neighbors_in_2 = findNeighbors(pos,map,2)
             neighbors_in_3 = findNeighbors(pos,map,3)
             for items in neighbors_in_2:
@@ -106,6 +108,8 @@ class Population:
             for items in neighbors_in_3:
                 if items in self.zones['residential']: self.score += 4  # For each residential tile within 3 squares, bonus of 4 points
         for pos in self.zones['residential']:
+            diff = map.checkMap(pos)
+            self.score -= diff
             neighbors_in_2 = findNeighbors(pos,map,2)
             neighbors_in_3 = findNeighbors(pos,map,3)
             for items in neighbors_in_2:
